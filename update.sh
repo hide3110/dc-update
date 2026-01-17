@@ -16,8 +16,18 @@ print_color() {
     printf "%b\n" "$1"
 }
 
-# 获取项目名称（优先级：命令行参数 > 环境变量 DC_NAME > 默认值）
-PROJECT_NAME=${1:-${DC_NAME:-caddy}}
+# ===== 改进点 1: 增强环境变量检测 =====
+# 获取项目名称(优先级:命令行参数 > 环境变量 DC_NAME > 默认值)
+if [ -n "$1" ]; then
+    PROJECT_NAME="$1"
+    SOURCE_TYPE="命令行参数"
+elif [ -n "$DC_NAME" ]; then
+    PROJECT_NAME="$DC_NAME"
+    SOURCE_TYPE="环境变量 DC_NAME"
+else
+    PROJECT_NAME="caddy"
+    SOURCE_TYPE="默认值"
+fi
 
 # 项目路径
 PROJECT_PATH="/opt/${PROJECT_NAME}"
@@ -26,10 +36,14 @@ print_color "${YELLOW}========================================${NC}"
 print_color "${YELLOW}Docker Compose 更新脚本${NC}"
 print_color "${YELLOW}项目: ${PROJECT_NAME}${NC}"
 print_color "${YELLOW}路径: ${PROJECT_PATH}${NC}"
-if [ -n "$DC_NAME" ] && [ -z "$1" ]; then
-    print_color "${BLUE}(通过环境变量 DC_NAME 指定)${NC}"
-fi
+print_color "${BLUE}来源: ${SOURCE_TYPE}${NC}"
 print_color "${YELLOW}========================================${NC}"
+
+# ===== 改进点 2: 增加 Shell 类型检测 =====
+print_color ""
+print_color "${BLUE}[检测] Shell 环境信息${NC}"
+print_color "${GREEN}  当前 Shell: $(readlink /proc/$$/exe 2>/dev/null || echo $SHELL)${NC}"
+print_color "${GREEN}  脚本解释器: $0${NC}"
 
 # 检测 Docker Compose 命令
 print_color ""
@@ -60,18 +74,28 @@ print_color "${YELLOW}========================================${NC}"
 # 检查项目目录是否存在
 if [ ! -d "$PROJECT_PATH" ]; then
     print_color "${RED}错误: 项目目录 ${PROJECT_PATH} 不存在!${NC}"
+    print_color "${YELLOW}提示: 请确认项目名称是否正确${NC}"
+    print_color "${YELLOW}  当前项目名: ${PROJECT_NAME}${NC}"
+    print_color "${YELLOW}  期望路径: ${PROJECT_PATH}${NC}"
     exit 1
 fi
 
 # 检查 docker-compose.yml 是否存在
 if [ ! -f "$PROJECT_PATH/docker-compose.yml" ] && [ ! -f "$PROJECT_PATH/compose.yaml" ]; then
     print_color "${RED}错误: 在 ${PROJECT_PATH} 中未找到 docker-compose.yml 或 compose.yaml 文件!${NC}"
+    print_color "${YELLOW}当前目录内容:${NC}"
+    ls -la "$PROJECT_PATH" 2>/dev/null || print_color "${RED}无法列出目录内容${NC}"
     exit 1
 fi
 
 # 进入项目目录
 cd "$PROJECT_PATH" || exit 1
 print_color "${GREEN}✓ 已进入目录: $(pwd)${NC}"
+
+# ===== 改进点 3: 显示将要更新的镜像 =====
+print_color ""
+print_color "${BLUE}[信息] 当前使用的镜像:${NC}"
+$DOCKER_COMPOSE_CMD images 2>/dev/null || print_color "${YELLOW}⚠ 无法获取镜像信息${NC}"
 
 # 拉取最新镜像
 print_color ""
@@ -90,6 +114,8 @@ if $DOCKER_COMPOSE_CMD up -d --force-recreate; then
     print_color "${GREEN}✓ 容器启动成功${NC}"
 else
     print_color "${RED}✗ 容器启动失败${NC}"
+    print_color "${YELLOW}尝试查看错误日志:${NC}"
+    $DOCKER_COMPOSE_CMD logs --tail=20
     exit 1
 fi
 
@@ -164,5 +190,11 @@ print_color "${YELLOW}最近日志(最后10行):${NC}"
 $DOCKER_COMPOSE_CMD logs --tail=10
 
 print_color ""
-print_color "${GREEN}更新完成!${NC}"
-print_color "${YELLOW}提示: 使用 '${DOCKER_COMPOSE_CMD} logs -f' 查看实时日志${NC}"
+print_color "${GREEN}✓✓✓ 更新完成! ✓✓✓${NC}"
+print_color "${YELLOW}========================================${NC}"
+print_color "${YELLOW}常用命令:${NC}"
+print_color "  查看实时日志: ${DOCKER_COMPOSE_CMD} logs -f"
+print_color "  重启服务:     ${DOCKER_COMPOSE_CMD} restart"
+print_color "  停止服务:     ${DOCKER_COMPOSE_CMD} stop"
+print_color "  查看状态:     ${DOCKER_COMPOSE_CMD} ps"
+print_color "${YELLOW}========================================${NC}"
