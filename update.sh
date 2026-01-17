@@ -121,8 +121,8 @@ fi
 
 # 清理旧镜像
 print_color ""
-print_color "${YELLOW}[3/4] 正在清理24小时前的旧镜像...${NC}"
-if docker image prune -af --filter "until=24h"; then
+print_color "${YELLOW}[3/4] 正在清理14天前的旧镜像...${NC}"
+if docker image prune -af --filter "until=14d"; then
     print_color "${GREEN}✓ 镜像清理完成${NC}"
 else
     print_color "${YELLOW}⚠ 镜像清理遇到问题,但不影响主流程${NC}"
