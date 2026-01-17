@@ -9,9 +9,9 @@ DC_NAME=sub-store sh <(curl -fsSL https://raw.githubusercontent.com/hide3110/dc-
 ```
 
 ### 若alpine运行出错时
-使用管道来执行（兼容性最好）：
+使用管道来执行（兼容性最好），使用时请自行定义sub-store此参数：
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hide3110/dc-update/main/update.sh | DC_NAME=sub-store sh
+curl -fsSL https://raw.githubusercontent.com/hide3110/dc-update/main/update.sh | sh -s sub-store
 ```
 
 ## 详细说明
