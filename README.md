@@ -8,6 +8,12 @@
 DC_NAME=sub-store sh <(curl -fsSL https://raw.githubusercontent.com/hide3110/dc-update/main/update.sh)
 ```
 
+### 若alpine运行出错时
+使用管道来执行（兼容性最好）：
+```bash
+curl -fsSL https://raw.githubusercontent.com/hide3110/dc-update/main/update.sh | DC_NAME=sub-store sh
+```
+
 ## 详细说明
 - 此脚本不在定义DC_NAME时默认值为caddy。
 
